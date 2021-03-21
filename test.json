@@ -1,0 +1,24 @@
+{
+    "name": "sequence",
+    "type": "object",
+    "properties": {
+        "tid": {
+            "name": "tid",
+            "type": "int"
+        },
+        "poop": {
+            "name": "poop",
+            "type": "int"
+        },
+        "triggerType": {
+            "name": "triggerType",
+            "type": "string",
+            "enum": [
+                "dialogue",
+                "inventory",
+                "zoom",
+                "pan"
+            ]
+        }
+    }
+}

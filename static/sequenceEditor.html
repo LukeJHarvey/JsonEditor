@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+        <script>{
+            var defaultSchema = {
+                "title": "Trigger",
+                "type": "object",
+                "properties": {
+                    "tid": {
+                        "type": "integer"
+                    },
+                    "triggerType": {
+                        "type": "string",
+                        "enum": [
+                            "Dialogue",
+                            "Inventory",
+                            "Player"
+                        ]
+                    },
+                    "triggerInfo": {
+                        "type": "object",
+                        "properties": {
+                            "pid": {
+                                "type": "integer"
+                            },
+                            "onLeave": {
+                                "type": "boolean",
+                                "format": "checkbox"
+                            },
+                            "onEnter": {
+                                "type": "boolean",
+                                "format": "checkbox"
+                            },
+                            "onFinish": {
+                                "type": "boolean",
+                                "format": "checkbox"
+                            },
+                            "onStart": {
+                                "type": "boolean",
+                                "format": "checkbox"
+                            },
+                            "onAction": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "triggerAction": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "Dialogue",
+                                    "Zoom",
+                                    "Pan",
+                                    "changeSeq"
+                                ]
+                            },
+                            "tid": {
+                                "type": "integer"
+                            },
+                            "sequence": {
+                                "type": "string"
+                            },
+                            "pid": {
+                                "type": "integer"
+                            },
+                            "tree": {
+                                "type": "string"
+                            },
+                            "targetObj": {
+                                "type": "string"
+                            }
+
+                        }
+                    }
+                }
+            }}
+            var triggers = { "triggers": []}
+            var editor
+            $(document).ready(function(){
+                const element = document.getElementById('inputFields');
+                var defaultOptions = {
+                    iconlib: 'fontawesome5',
+                    object_layout: 'normal',
+                    schema: defaultSchema,
+                    show_errors: 'interaction',
+                    theme: 'bootstrap4'
+                }
+                editor = new JSONEditor(element, defaultOptions);
+                $("#up").change(function(event){
+                    var uploadedFile = event.target.files[0]; 
+                    
+                    if(uploadedFile.type !== "application/json" && uploadedFile.type !== "application/x-javascript") { 
+                        alert("Wrong file type == " + uploadedFile.type); 
+                        return false;
+                    }
+                    
+                    if (uploadedFile) {
+                        var readFile = new FileReader();
+                        readFile.onload = function(e) { 
+                            var contents = e.target.result;
+                            var json = JSON.parse(contents);
+                            console.log(json)
+                            
+                            //changeGrid(json);
+                        };
+                        readFile.readAsText(uploadedFile);
+                    } else { 
+                        console.log("Failed to load file");
+                    }
+                });
+                $( "#newForm" ).submit(function( event ) {
+                    event.preventDefault();
+                    addRow(objectifyForm($( this ).serializeArray()));
+                    
+                });
+                
+            });
+            function changeGrid(json)
+            {
+                var html = '<table id="sequenceTable" class="table table-striped">';
+                html += '<tr id="labels">';
+                var flag = 0;
+                html += '<th>TID</th>' + '<th><Trigger Type/th>';
+                html += '</tr>';
+                $.each(triggers['triggers'], function(index, value){
+                    html += '<tr>';
+                    $.each(value, function(index2, value2){
+                        html += '<td>'+value2+'</td>';
+                    });
+                    html += '</tr>';
+                });
+                html += '</table>';
+                $('#dataTable').html(html);
+            }
+            function objectifyForm(formArray) {
+                //serialize data function
+                var returnArray = {};
+                for (var i = 0; i < formArray.length; i++){
+                    returnArray[formArray[i]['name']] = formArray[i]['value'];
+                }
+                console.log(returnArray);
+                return returnArray;
+            }
+            function addRow(item) {
+                var markup = "<tr><td>"+item.itemName+"</td><td>"+item.itemSize+"</td><td>"+item.itemType+"</td><td>"
+                    +item.itemMaterial+"</td><td>"+item.itemDescription+"</td><td>"+item.spriteName+"</td><td>"+craft+"</td></tr>"
+                $("#itemTable").find('tbody')
+                    .append(markup);
+            }
+            function addData() {
+                triggers['triggers'].push(editor.getValue())
+            }
+            function tableToJSON() {
+                var items = []
+                var tbl = $('#itemTable tr').get().map(function(row) {
+                    return $(row).find('td').get().map(function(cell) {
+                        return $(cell).html();
+                    });
+                });
+                tbl.forEach(arr => {
+                    if(arr.length != 0){
+                        item = {
+                            "itemName": arr[0],
+                            "itemSize": arr[1],
+                            "itemType": arr[2],
+                            "itemMaterial": arr[3],
+                            "itemDescription": arr[4],
+                            "spriteName": arr[5],
+                            "craftable": (arr[6]=='true')
+                        };
+                        items.push(item);
+                    }
+                })
+                return {"items":items};
+            }   
+
+            function exportJson(el) {
+                var items = triggers;
+                var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(items));
+                // what to return in order to show download window?
+
+                el.setAttribute("href", "data:"+data);
+                el.setAttribute("download", "ItemDatabase.json");    
+            }
+                
+                
+            
+        </script>
+    </head>
+    <body class='p-3'>
+        <form class="form-inline">
+            <div class="form-group row">
+                <label for="filebutton" class="col-sm-3 col-form-label">Add Json</label>
+                <div class="col-sm-10">
+                    <input id="up" name="filebutton" class="input-file" type="file">
+                </div>
+            </div>
+        </form>
+        <div id="inputFields"></div>
+        <div class="row">
+            <button onclick="addData();">Add to Json</button>
+        </div> 
+        
+        <div class = "row">
+            <a id="exportJSON" onclick="exportJson(this);" class="btn btn-primary mb-2"><i class="icon-download"></i> export json</a>
+        </div>
+        
+            
+        <div class = "" id="dataTable">
+        </div> 
+    </body>
+    
+</html>
