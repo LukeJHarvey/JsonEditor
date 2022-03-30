@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+        <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin="anonymous" />
+        <script src="https://cdn.jsdelivr.net/npm/@json-editor/json-editor@latest/dist/jsoneditor.min.js"></script>
+        <script>
+            var sequenceSchema = {
+                "title": "sequence",
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "order": {
+                        "type": "boolean",
+                        "setVar": "order",
+                        "dependent": ["root.currTid", "root.triggers.tid", "root.triggers.triggerAction.tid"]
+                    },
+                    "currTid": {
+                        "type": "integer",
+                    },
+                    "triggers": {
+                        "type": "objectArr",
+                        "format": [
+                            ["root.triggers.triggerName", "Trigger Name"],
+                            ["root.triggers.triggerType", "Trigger Type"],
+                            ["root.triggers.triggerAction.actionType", "Trigger Action"]
+                        ],
+                        "properties": {
+                            "tid": {
+                                "type": "integer",
+                            },
+                            "triggerName": {
+                                "type": "string",
+                            },
+                            "triggerType": {
+                                "type": "string",
+                                "enum": [
+                                    "Dialogue",
+                                    "Inventory",
+                                    "Player",
+                                    "Monster"
+                                ],
+                                "setVar": "triggerType",
+                                "dependent": [
+                                    ["root.triggers.triggerInfo.pid", ["Dialogue"]],
+                                    ["root.triggers.triggerInfo.onLeave", ["Inventory", "Dialogue"]],
+                                    ["root.triggers.triggerInfo.onEnter", ["Inventory", "Dialogue"]]
+                                ]
+                            },
+                            "triggerInfo": {
+                                "type": "object",
+                                "properties": {
+                                    "pid": {
+                                        "type": "integer",
+                                    },
+                                    "onLeave": {
+                                        "type": "boolean",
+                                    },
+                                    "onEnter": {
+                                        "type": "boolean",
+                                    },
+                                    "onAction": {
+                                        "type": "enum",
+                                        "enum": [
+                                            ["Player", "Enter PlaceableItem Ghost ", "string"],
+                                            ["Player", "Enter PlaceableItem Item ", "string"],
+                                            ["Player", "PickUp ", "string"],
+                                            ["Player", "Interact PlaceableItem ", "string"],
+                                            ["Inventory", "Craft Successful PlaceableItem ", "string"],
+                                            ["Inventory", "Craft Fail PlaceableItem ", "string"],
+                                            ["Inventory", "Craft Successful Item ", "string"],
+                                            ["Inventory", "Craft Fail"],
+                                            ["Inventory", "Size_Select"],
+                                            ["Inventory", "Material_Select"],
+                                            ["Inventory", "Type_Select"]
+                                        ]
+                                    }
+                                }
+                            },
+                            "triggerAction": {
+                                "type": "object",
+                                "properties": {
+                                    "actionType": {
+                                        "type": "string",
+                                        "enum": [
+                                            "Dialogue",
+                                            "Zoom",
+                                            "changeSeq"
+                                        ],
+                                        "setVar": "triggerAction",
+                                        "dependent": [
+                                            ["root.triggers.triggerAction.sequence", ["changeSeq"]],
+                                            ["root.triggers.triggerAction.pid", ["Dialogue", "Zoom"]], 
+                                            ["root.triggers.triggerAction.pidArray", ["Dialogue"]],
+                                            ["root.triggers.triggerAction.tree", ["Dialogue", "Zoom"]], 
+                                            ["root.triggers.triggerAction.targetObj", ["Zoom"]]
+                                        ]
+                                    },
+                                    "tid": {
+                                        "type": "integer",
+                                    },
+                                    "sequence": {
+                                        "type": "string",
+                                    },
+                                    "pid": {
+                                        "type": "integer",
+                                    },
+                                    "tree": {
+                                        "type": "string",
+                                    },
+                                    "targetObj": {
+                                        "type": "string",
+                                    }
+                                }
+                            }
+                        }
+                    }
+                } 
+            }
+            var data = {
+                "order": { 
+                    "value": false,
+                    "path": "",
+                    "type": "boolean",
+                    "change": []
+                },
+                "triggerAction": {
+                    "value": "",
+                    "path": "",
+                    "type": "enum",
+                    "change": []
+                },
+                "triggerType": {
+                    "value": "",
+                    "path": "",
+                    "type": "enum",
+                    "change": []
+                }
+            }
+            var dataEntryFormat = schemaToJsonFormat()
+            var jsonData = {}
+            var currentlyEditing = null
+
+            function schemaToJsonFormat() {
+                var temp =JSON.parse(JSON.stringify(sequenceSchema))
+                var newObj = {}
+                var deleteArray = ["dependent", "setVar", "enum", "title", "format"]
+                var path = "root"
+                function iterateThrough(obj, path, newObj) {
+                    if(typeof(obj) != "object"){
+                        return
+                    }
+                    
+                    for (var [key, value] of Object.entries(obj)) {
+                        if(deleteArray.indexOf(key) > -1)
+                            delete obj[key]
+                        else {
+                            if(key != "properties") {
+                                if(key == "type") {
+                                    newObj[key] = obj[key]
+                                }
+                                else {
+                                    var newPath = path+"."+key
+                                    newObj[key] = {"path": newPath}
+                                    iterateThrough(obj[key], newPath, newObj[key])
+                                } 
+                            }
+                            else
+                                iterateThrough(obj[key], path, newObj)
+                        }
+                    }
+                }
+                iterateThrough(temp, path, newObj)
+                return newObj
+            }
+            
+            $(document).ready(function() {
+                var input = $("#inputFields");
+                path = "root";
+                var sequence = newObject(path, sequenceSchema["title"]);
+                var props = sequenceSchema["properties"];
+                var ret = searchObject(props, path);
+                sequence.children(".card").append(ret);
+                input.append(sequence);
+                for (var [key, value] of Object.entries(data)) {
+                    var target = $("select[id='"+value['path']+"']")
+                    if(value['type'] == "boolean") {
+                        var target = $("input[id='"+value['path']+"']");
+                    }
+                    target.prop('checked', false);
+                    var targ = {id:target.attr("id"), value:value['value']}
+                    targ.value = value['value']
+                    onVarChange(targ)
+                }
+                $(".custom-collapse").click(function(e) {
+                    e.preventDefault();
+                    var header = $(this);
+                    var card = header.parent().parent().children(".card");
+                    var ico = header.children(".fas");
+                    if(header.attr("title")=="Collapse") {
+                        header.attr("title", "Expand");
+                        card.attr("style", "display: none");
+                        ico.removeClass("fa-caret-down");
+                        ico.addClass("fa-caret-right");
+                    }
+                    else {
+                        header.attr("title", "Collapse")
+                        card.attr("style", "");
+                        ico.removeClass("fa-caret-right");
+                        ico.addClass("fa-caret-down");
+                    }
+                })
+                $("#up").change(function(event){
+                    var uploadedFile = event.target.files[0]; 
+                    if(uploadedFile.type !== "application/json" && uploadedFile.type !== "application/x-javascript") { 
+                        alert("Wrong file type == " + uploadedFile.type); 
+                        return false;
+                    }
+                    
+                    if (uploadedFile) {
+                        var readFile = new FileReader();
+                        readFile.onload = function(e) { 
+                            var contents = e.target.result;
+                            var json = JSON.parse(contents);
+                            console.log(json)
+                            
+                            //changeGrid(json);
+                        };
+                        readFile.readAsText(uploadedFile);
+                    } else { 
+                        console.log("Failed to load file");
+                    }
+                });
+            });
+            function onVarChange(e) {
+                for (var [key, value] of Object.entries(this.data)) {
+                    if(value['path'] == e.id) {
+                        if(value['type'] == "boolean") {
+                            for(targ in value['change']) {
+                                target = value['change'][targ]
+                                targetDiv = $('div[data-schemapath="'+target+'"]')
+                                if(e.checked) {
+                                    targetDiv.attr("style", "");
+                                }
+                                else {
+                                    targetDiv.attr("style", "display:none");
+                                }
+                            }
+                        }
+                        else if(value['type'] == "enum") {
+                            for(targ in value['change']) {
+                                if(value['path'] == "root[triggers][triggerType]") {
+                                    onTypeChange(e)
+                                }
+                                target = value['change'][targ]
+                                targetDiv = $('div[data-schemapath="'+target[0]+'"]')
+                                if(target[1].includes(e.value)) {
+                                    targetDiv.attr("style", "");
+                                }
+                                else {
+                                    targetDiv.attr("style", "display:none");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            function onTypeChange(e) {
+                var options = $('option')
+                on = false
+                ex = null
+                options.each(function(i, o) {
+                    if(o.hasAttribute("data-dependent")) {
+                        ex = $(o)
+                        parent = $(o).parent().parent()
+                        if($(o).attr("data-dependent") != e.value) {
+                            $(o).attr("disabled", "disabled")
+                            $(o).attr("style", "display:none")
+                        }
+                        else {
+                            $(o).removeAttr("disabled")
+                            $(o).attr("style", "")
+                            on = true
+                        }
+                    }
+                })
+                if(ex != null) {
+                    if(on) {
+                        ex.parent().parent().parent().attr("style", "");
+                    }
+                    else {
+                        ex.parent().parent().parent().attr("style", "display:none");
+                    }
+                }
+            }
+            function onEnumChange(e) {
+                val = e.value
+                e = $(e)
+                var inputfield = e.parent().parent().find('input')
+                console.log(inputfield)
+                var options = $(e).children('option')
+                options.each(function(i, o) {
+                    if(val == $(o).attr("value")) {
+                        if($(o).attr("data-field") == "none") {
+                            inputfield.attr("style", "display:none");
+                        }
+                        else {
+                            inputfield.attr("style", "");
+                        }
+                    }
+                }) 
+            }
+
+            function searchObject(props, path) {
+                var rows = $("<div>");
+                for (var [key, value] of Object.entries(props)) {
+                    var dotPath = path+"."+key;
+                    var varPath = dotToBrackets(dotPath);
+                    var row = $('<div>').addClass("row");
+                    var divTyping = $('<div>').attr("data-schematype",value["type"]);
+                    divTyping.attr("data-schemapath", path+"."+key).addClass("col-md-12");
+                    switch(value['type']) {
+                        case "string":
+                            if(value.hasOwnProperty("enum")) {
+                                divTyping.append(newStringEnum(key, varPath, value['enum']));
+                            }
+                            else {
+                                divTyping.append(newString(key, varPath));
+                            }
+                            break;
+                        case "integer":
+                            divTyping.append(newInteger(key, varPath));
+                            break;
+                        case "boolean": 
+                            divTyping.append(newBoolean(key, varPath));
+                            break;
+                        case "enum": 
+                            divTyping.append(newEnum(key, varPath, value['enum']))
+                            break;
+                        case "object":
+                            divTyping.addClass("je-object__container");
+                            divTyping=newObject(path, key, divTyping);
+                            divTyping.children('.card').append(searchObject(value["properties"], dotPath));
+
+                            break;
+                        case "objectArr":
+                            divTyping.addClass("je-object__container");
+                            divTyping=newObject(path, key, divTyping);
+                            divTyping.children('.card').append(searchObject(value["properties"], dotPath));
+                            divTyping.children('.card').append($("<button>").attr("onclick","getData(this);").text("Add Trigger"))
+                            console.log(path)
+                            divTyping.children('.card').append(newTable(dotPath,value['format']))
+                            break;
+                    }
+                    if('dependent' in value) {
+                        var setVar = this.data[value['setVar']]
+                        setVar['change'] = value['dependent'];
+                        setVar['path'] = varPath;
+                        if(value.hasOwnProperty("enum")){
+                            setVar['value'] = value['enum'][0]
+                            divTyping.find("select").attr("onChange", "onVarChange(this)");
+                        }
+                        else
+                            divTyping.find("input").attr("onChange", "onVarChange(this)");
+                    }
+                    row.append(divTyping);
+                    rows.append(row);
+                }
+                return rows;
+            }
+            function dotToBrackets(path) {
+                var tempStr = "root";
+                var split = path.split('.');
+                for(i = 1; i < split.length; i++) 
+                {
+                    tempStr += "["+split[i]+"]";
+                }
+                return tempStr;
+            }
+            function newObject(path, title, newObj = ""){
+                if(newObj == "")
+                    newObj = $('<div>').attr("data-schematype", "object").attr("data-schemapath", path).addClass("je-object__container");
+                newObj.append(addTitle(title));
+                newObj.append($('<div>').addClass("card card-body mb-3 bg-light"));
+                return newObj
+            }
+            function addTitle(title){
+                var newTitle = $('<h3>').addClass("card-title je-object__title").attr("style", "display: inline-block;");
+                var newButton = $('<button>').addClass("btn btn-secondary btn-sm custom-collapse").attr("title", "Collapse");
+                newButton.append($('<i>').addClass("fas fa-caret-down"));
+                newTitle.append(newButton);
+                newTitle.append($("<label>").text(title));
+                return newTitle;
+            }
+            function newInteger(label, path) {
+                var div = $("<div>").addClass("form-group");
+                div.append($("<label>").attr("for", path).text(label));
+                div.append($("<input>").attr("type", "number").attr("name", path).attr("id", path).addClass("form-control"));
+                return div;
+            }
+            function newString(label, path) {
+                var div = $("<div>").addClass("form-group");
+                div.append($("<label>").attr("for", path).text(label));
+                div.append($("<input>").attr("type", "text").attr("name", path).attr("id", path).addClass("form-control"));
+                return div;
+            }
+            function newBoolean(label, path) {
+                
+                var div = $("<div>").addClass("form-group");
+                var check = $("<div>").addClass("form-check");
+                check.append($("<input>").attr("type", "checkbox").attr("name", path).attr("id", path).addClass("form-check-input"));
+                check.append($("<label>").attr("for", path).text(label).addClass("form-check-label"));
+                div.append(check);
+                return div;
+            }
+            function newStringEnum(label, path, strEnum) {
+                var div = $("<div>").addClass("form-group");
+                div.append($("<label>").attr("for", path).text(label));
+                var select = $("<select>").addClass("form-control").attr("name", path).attr("id", path);
+                for(value in strEnum) {
+                    select.append($("<option>").attr("value",strEnum[value]).text(strEnum[value]));
+                    
+                }
+                div.append(select);
+                return div;
+            }
+            function newIntegerArray(lable, path) {
+
+            }
+            function newEnum(label, path, strEnum) {
+                var div = $("<div>").addClass("form-group");
+                div.append($("<label>").attr("for", path).text(label));
+                var select = $("<select>").addClass("form-control").attr("name", path).attr("id", path).attr("onChange", "onEnumChange(this)");
+                for(value in strEnum) {
+                    var option = $("<option>").attr("value",strEnum[value][1]).text(strEnum[value][1]).attr("data-dependent",strEnum[value][0])
+                    if(strEnum[value].length == 3) {
+                        option.attr("data-field",strEnum[value][2])
+                    }
+                    else {
+                        option.attr("data-field","none")
+                    }
+                    select.append(option);
+                }
+                var field = $("<input>").attr("type", "text").addClass("form-control")
+                div.append(select);
+                div.append(field);
+                return div;
+            }
+            function newTable(path, arr) {
+                var table = $("<table>").attr("data-table-root", path).addClass("dataTable, table-bordered, table-dark")
+                var header = $("<thead>").addClass("thead-dark").appendTo(table)
+                var tr = $("<tr>").appendTo(header)
+                for(idx in arr) {
+                    $("<th>").attr("scope", "col").attr("data-reference", arr[idx][0]).text(arr[idx][1]).appendTo(tr)
+                }
+                $("<th>").text("Edit").appendTo(tr)
+                $("<th>").text("Delete").appendTo(tr)
+                return table
+            }
+            function getValue(jObj) {
+                var d
+                if(jObj[0].hasAttribute("type")) {
+                    if(jObj.attr('type') == "checkbox")
+                        d = jObj.prop("checked")
+                    else    
+                        d = jObj.prop("value")
+                }
+                else {
+                    d = jObj.prop("value")
+                }
+                return d
+            }
+            function setValue(jObj, val) {
+                if(jObj[0].hasAttribute("type")) {
+                    if(jObj.attr('type') == "checkbox")
+                        jObj.prop("checked", val)
+                    else    
+                        jObj.prop("value", val)
+                }
+                else {
+                    jObj.prop("value", val)
+                }
+            }
+            function getObjectFormat(format, path) {
+                subPath = path.split(".")
+                dataLoc = format
+                for(i = 1; i < subPath.length; i+=1) {
+                    dataLoc = dataLoc[subPath[i]]
+                }
+                return dataLoc
+            }
+            
+            function getData(e) {
+                var elem = $(e)
+                var parent = elem.parent().parent()
+                var format = getObjectFormat(dataEntryFormat,parent.attr("data-schemapath"))
+                var newdata = {}
+                function iterateThrough(obj, data) {
+                    if(typeof(obj) != "object") {
+                        return
+                    }
+                    for (var [key, value] of Object.entries(obj)) {
+                        if(value.hasOwnProperty("path")) {
+                            var newPath = dotToBrackets(value['path'])
+                            var jObj = $("input[name='"+newPath+"'], select[name='"+newPath+"']")
+                            var jDiv = $("div[data-schemapath='"+value['path']+"']")
+                            if(jObj.length > 0 && jObj.get(0).style.display != "none")
+                                data[key] = getValue(jObj)
+                            else if(jDiv.length > 0 && jDiv.get(0).style.display != "none")
+                                data[key] = getValue(jDiv)
+                        }
+                        if(value.hasOwnProperty("type") && value['type'] == "object") {
+                            data[key] = {}
+                            iterateThrough(obj[key], data[key])
+                        } 
+                    }
+                }
+                iterateThrough(format, newdata)
+                if(currentlyEditing) {
+                    stopEditing(jsonData, newdata, parent.attr("data-schemapath"), currentlyEditing.creation_time)
+                }
+                else {
+                    newdata.creation_time = Date.now()
+                    addData(jsonData, dataEntryFormat, parent.attr("data-schemapath"), newdata)
+                    append_data(newdata, parent.attr("data-schemapath"))
+                }
+            }
+            function addData(storage, format, path, newdata) {
+                subPath = path.split(".")
+                subStorage = storage
+                subFormat = format
+                for(i = 1; i < subPath.length; i++) {
+                    if(!subStorage.hasOwnProperty(subPath[i])) {
+                        switch(subFormat[subPath[i]]["type"]) {
+                            case "objectArr":
+                                subStorage[subPath[i]] = []
+                                break;
+                            case "object":
+                                subStorage[subPath[i]] = {}
+                                break;
+                        }
+                    }
+                    subStorage = subStorage[subPath[i]]
+                    subFormat = subFormat[subPath[i]]
+                }
+                subStorage.push(newdata)
+            }
+            function populateEditor(popData) {
+                function iterateThrough(obj, data) {
+                    if(typeof(obj) != "object") {
+                        return
+                    }
+                    for (var [key, value] of Object.entries(obj)) {
+                        if(value.hasOwnProperty("path")) {
+                            var newPath = dotToBrackets(value['path'])
+                            var jObj = $("input[name='"+newPath+"'], select[name='"+newPath+"']")
+                            var jDiv = $("div[data-schemapath='"+value['path']+"']")
+                            if(jObj.length > 0 && jObj.get(0).style.display != "none")
+                                setValue(jObj, data[key])
+                            else if(jDiv.length > 0 && jDiv.get(0).style.display != "none")
+                                setValue(jDiv, data[key])
+                        }
+                        if(value.hasOwnProperty("type") && value['type'] == "object") {
+                            iterateThrough(obj[key], data[key])
+                        }
+                    }
+                    
+                }
+                iterateThrough(dataEntryFormat, popData)
+            }
+            function stopEditing(storage, newData, path, original_time) {
+                var table = $('[data-table-root="'+ path +'"]');
+                newData.creation_time = Date.now()
+                var tr = table.find('tr#'+original_time);
+                tr.attr("id", newData.creation_time).removeClass("table-info")
+                var tableData = table.find("th[scope='col']")
+                tableData.each((i, elem) => {
+                    var dataAttr = $(elem).attr("data-reference")
+                    var editField = tr.children("td#" + dataAttr)
+                    location = fromPathToProperty(newData, dataAttr)
+                    console.log(location)
+                    editField.text(location)
+                })
+                location = fromPathToProperty(storage, path)
+                console.log(location)
+                location = newData
+                currentlyEditing = null
+            }
+            function editData(e) {
+                $(e).parent().siblings().removeClass("table-info")
+                $(e).parent().addClass("table-info")
+                var path = $(e).parent().parent().attr("data-table-root")
+                var id = $(e).parent().attr("id")
+                var idx = 1
+                loc = fromPathToProperty(jsonData, path)
+                var obj = loc.find(o => o.creation_time == id)
+                currentlyEditing = obj
+                populateEditor(obj)
+            }
+            function deleteData(e) {
+                var id = $(e).parent().attr("id")
+                var path = $(e).parent().parent().attr("data-table-root").split('.')
+                var idx = 1
+                loc = jsonData
+                while(!loc.hasOwnProperty(path[path.length-1])) {
+                    loc = loc[path[idx++]]
+                }
+                var i = loc[path[idx]].indexOf(o => o.creation_time == id)
+                delete loc[path[idx]][i]
+                $(e).parent().remove()
+            }   
+            function append_data(data, path){
+                var table = $('[data-table-root="'+ path +'"]');
+                var body = $("<tbody>")
+                if(table.find('tbody').length) {
+                    body = table.find('tbody')
+                }
+                var tr = $("<tr>").attr("id", data.creation_time).appendTo(body)
+                var tableData = table.find("th[scope='col']")
+                tableData.each((i, elem) => {
+                    var dataAttr = $(elem).attr("data-reference")
+                    var subPath = dataAttr.split(".")
+                    var idx = 1
+                    var loc = data
+                    while(!loc.hasOwnProperty(subPath[idx])) {
+                        idx++
+                    }
+                    while(!loc.hasOwnProperty(subPath[subPath.length-1])) {
+                        loc = loc[subPath[idx++]]
+                    }
+                    $("<th>").attr("data-reference", dataAttr).text(loc[subPath[idx]]).appendTo(tr)
+                })
+                $("<td>").text("Edit").appendTo(tr).attr("onClick", "editData(this)")
+                $("<td>").text("Delete").appendTo(tr).attr("onClick", "deleteData(this)")
+                table.append(tr)
+            }
+            function fromPathToProperty(obj, path) {
+                var subPath = path.split(".")
+                var idx = 1
+                var loc = obj
+                while(!loc.hasOwnProperty(subPath[idx]) && idx < subPath.length) {
+                    idx++
+                }
+                while(!loc.hasOwnProperty(subPath[subPath.length-1])) {
+                    loc = loc[subPath[idx++]]
+                }
+                return loc[subPath[idx]]
+            }
+
+            function exportJson(el) {
+                var data = "text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataEntries));
+                // what to return in order to show download window?
+
+                el.setAttribute("href", "data:"+data);
+                el.setAttribute("download", "Sequences.json");    
+            }
+            
+        </script>
+    </head>
+    <body class='p-3'>
+        <form class="form-inline">
+            <div class="form-group">
+                <label for="filebutton">Upload JsonFile</label>
+                <input id="up" name="filebutton" class="input-file mx-sm-3" type="file"/>
+            </div>
+        </form>
+        <div id="inputFields"></div>
+        <div class="row">
+        </div>
+        <div class = "row">
+            <a id="exportJSON" onclick="exportJson(this);" class="btn btn-primary mb-2"><i class="icon-download"></i> export json</a>
+        </div>
+        
+            
+        <div class = "" id="dataTable">
+        </div> 
+    </body>
+    
+</html>
