@@ -1,0 +1,97 @@
+{
+    "Object_Name": {
+        "title": {
+            "format": "string",
+            "required": false,
+            "_comment": "Optional. String to define the shown name above the object when using schema"
+        },
+        "type": {
+            "format": "string",
+            "options": ["object", "int", "real", "string", "boolean", "enum"],
+            "required": true,
+            "_comment": "The Type of the Object."
+        },
+        "array": {
+            "format": "boolean",
+            "accepted_types": ["object", "int", "real", "string"],
+            "required": true,
+            "_comment": "Defines if this object is an array."
+        },
+        "empty": {
+            "format": "boolean",
+            "accepted_types": ["int", "real", "string", "enum"],
+            "required": true,
+            "_comment": "Defines if the field can be empty"
+        },
+        "properties": {
+            "format": "Object",
+            "accepted_types": ["object"],
+            "required": true,
+            "_comment": "Used for type 'object' to define subfields."
+        },
+        "enum": {
+            "format": [],
+            "accepted_types": ["int", "real", "string", "enum"],
+            "required": false,
+            "_comment": "Limits field to predefined options. If type is enum, then each enum can be a different type. Otherwise they must a single type"
+        },
+        "dependent": {
+            "format": [ ["path.to.variable.x", ["value of x 1", "value of x 2"]] ],
+            "required": false,
+            "_comment": "Only shows this Field on the Schema if var x is set to specific values."
+        },
+        "dependent_enum": {
+            "format": [ ["path.to.variable.x", ["value of x 1", "value of x 2"], "enum value" ] ],
+            "accepted_types": ["int", "real", "string"],
+            "required": false,
+            "_comment": "Limits field to predefined options. Enum Value options are dependent on the value of another field"
+        },
+        "description": {
+            "format": "string",
+            "required": false,
+            "_comment": "Description of the field"
+        },
+        "String Specific Optional Properties": {
+            "max_len": {
+                "format": "int",
+                "_comment": "Define Max Length of String"
+            },
+            "min_len": {
+                "format": "int",
+                "_comment": "Define Minimum Length of String"
+            },
+            "illegal_characters": {
+                "format": [],
+                "_comment": "Define each character that is not allowed. [\"special\"]: makes all special characters illegal."
+            },
+            "no_spaces": {
+                "format": "boolean",
+                "_comment": "Disallows spaces. Same as setting illegal_characters to [\" \"]"
+            }
+        },
+        "Int Specific Optional Properties": {
+            "int_max": {
+                "format": "int"
+            },
+            "int_min": {
+                "format": "int"
+            },
+            "int_range": {
+                "format": [0,99],
+                "_comment": "Only allows ints inside range."
+            }
+        },
+        "Real Specific Optional Properties": {
+            "real_max": {
+                "format": "real"
+            },
+            "real_min": {
+                "format": "real"
+            },
+            "real_range": {
+                "format": [0.0,99.99],
+                "_comment": "Only allows reals inside range."
+            }
+        }
+    }
+}

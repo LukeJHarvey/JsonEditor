@@ -1,0 +1,110 @@
+{
+    "RootObject": {
+        "title": "Root",
+        "type": "object",
+        "array": true,
+        "properties": {
+            "Int_Ex": {
+                "type": "int",
+                "array": false,
+                "empty": false,
+                "int_min": -3,
+                "int_max": 10
+            },
+            "Real_Ex": {
+                "type": "real",
+                "array": false,
+                "empty": false,
+                "real_min": 3.5,
+                "real_max": 500.2
+            },
+            "String_Ex": {
+                "type": "string",
+                "array": false,
+                "empty": false,
+                "min_len": 3,
+                "max_len": 25,
+                "illegal_characters": ["special"],
+                "no_spaces": true
+            },
+            "Boolean_Ex": {
+                "type": "boolean"
+            },
+            "Enum_Ex": {
+                "type": "string",
+                "array": false,
+                "empty": false,
+                "enum": ["Option 1", "Option 2", "Option 3", "Option 4"]
+            },
+            "Enum_MultiVariable_Ex": {
+                "type": "enum",
+                "array": false,
+                "empty": false,
+                "enum": ["Option 1", 2, 2.5, "Option 3"] 
+            },
+            "Enum_Dependent_Ex": {
+                "type": "string",
+                "array": false,
+                "empty": false,
+                "dependent_enum": [
+                    ["RootObject.Boolean_Ex", [true], "Boolean_Ex is True"],
+                    ["Boolean_Ex", [true], "Boolean_Ex is True and in the same Object"],
+                    ["RootObject.Boolean_Ex", [false], "Boolean_Ex is False"],
+                    ["String_Ex", ["Yes"], "String_Ex's value is Yes"],
+                    ["Int_Ex", [">3"], "Int_Ex's value is greater than 3"],
+                    ["Int_Ex", ["<3"], "Int_Ex's value is less than 3"],
+                    ["Int_Ex", ["=3"], "Int_Ex's value is equal to 3"]
+                ]
+            },
+            "NestedObject": {
+                "type": "object",
+                "properties": {
+                    "Int_Arr_Ex": {
+                        "type": "int",
+                        "array": true,
+                        "empty": false
+                    },
+                    "String_Arr_Ex": {
+                        "type": "string",
+                        "array": true,
+                        "empty": false
+                    },
+                    "Real_Arr_Ex": {
+                        "type": "real",
+                        "array": true,
+                        "empty": false
+                    }
+                }
+            },
+            "Show_Dependents": {
+                "type": "boolean"
+            },
+            "String_Dependent": {
+                "type": "string",
+                "array": false,
+                "empty": false
+            },
+            "Show_Enum_Extra_Options": {
+                "type": "boolean"
+            },
+            "Show_Enum_String_Extra_Options": {
+                "type": "string",
+                "array": false,
+                "empty": false,
+                "enum": ["Show Option 6", "Show Option 7"]
+            },
+            "Dependent_Enum": {
+                "type": "enum",
+                "array": false,
+                "empty": false,
+                "enum": ["Option 1", "Option 2", 3],
+                "dependent_enum": [
+                    ["",[],"Option 4"],
+                    ["Show_Enum_Extra_Options", [true], "Option 5"],
+                    ["Show_Enum_String_Extra_Options", ["Show Option 6"], "Option 6"],
+                    ["Show_Enum_String_Extra_Options", ["Show Option 7"], "Option 7"]
+                ]
+            }
+        }
+    }
+}

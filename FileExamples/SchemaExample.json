@@ -1,0 +1,55 @@
+{
+    "Students": {
+        "title": "Student Body",
+        "type": "object",
+        "array": true,
+        "properties": {
+            "Name": {
+                "type": "string",
+                "array": false,
+                "empty": false
+            },
+            "Age": {
+                "type": "int",
+                "array": false,
+                "empty": false
+            },
+            "Gender": {
+                "type": "string",
+                "array": false,
+                "empty": false,
+                "enum": ["Male", "Female", "NonBinary"]
+            },
+            "GradeLevel": {
+                "type": "int",
+                "array": false,
+                "empty": false,
+                "enum": [9,10,11,12]
+            },
+            "AttendingProm": {
+                "type": "boolean",
+                "dependent": ["Students.GradeLevel", [11, 12]]
+            },
+            "GPA": {
+                "type": "real",
+                "array": false,
+                "empty": true
+            },
+            "Classes": {
+                "type": "string",
+                "array": true,
+                "empty": true,
+                "dependent_enum": [
+                    ["Students.GradeLevel", [11, 12], "AP Bio"],
+                    ["Students.GradeLevel", [11, 12], "AP Physics"],
+                    ["Students.GradeLevel", [12], "College Prep"],
+                    ["Students.GradeLevel", [9], "Math 1"],
+                    ["Students.GradeLevel", [10], "Math 2"],
+                    ["Students.GradeLevel", [11, 12], "AP Calc 1"],
+                    ["Students.GradeLevel", [12], "AP Calc 2"],
+                    ["", [], "Economics"]
+                ]
+            }
+        }
+    }
+}
