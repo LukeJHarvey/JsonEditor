@@ -7,7 +7,7 @@ const props = defineProps({
 const elements = ref([]);
 const inp = ref("");
 function addElement(input) {
-    if(!elements.value.includes(input)) {
+    if(!elements.value.includes(input) && input) {
         if(props.type == "int" && (input%1)) 
             return;
         elements.value.push(input);
